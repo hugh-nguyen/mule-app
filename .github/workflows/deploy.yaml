@@ -1,0 +1,127 @@
+name: Deploy MuleSoft API
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate unique app name
+        id: app_name
+        run: |
+          # Create a unique app name using a timestamp
+          APP_NAME="mule-service-$(date +%Y%m%d%H%M%S)"
+          echo "name=$APP_NAME" >> $GITHUB_OUTPUT
+          echo "Using app name: $APP_NAME"
+
+      - name: Create minimal MuleSoft app
+        run: |
+          # Create directory structure
+          mkdir -p mule-app/src/main/mule
+          mkdir -p mule-app/src/main/resources
+          
+          # Create the Mule XML config with the /getresult endpoint
+          cat > mule-app/src/main/mule/main.xml << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <mule xmlns="http://www.mulesoft.org/schema/mule/core"
+                xmlns:http="http://www.mulesoft.org/schema/mule/http"
+                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                xsi:schemaLocation="
+                  http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+                  http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+          
+              <http:listener-config name="api-http-listener-config">
+                  <http:listener-connection host="0.0.0.0" port="8081" />
+              </http:listener-config>
+          
+              <flow name="get-result-flow">
+                  <http:listener config-ref="api-http-listener-config" path="/getresult"/>
+                  <set-payload value="0.0.1"/>
+              </flow>
+          </mule>
+          EOF
+          
+          # Create properties file
+          cat > mule-app/src/main/resources/mule-app.properties << 'EOF'
+          http.port=8081
+          EOF
+          
+          # Create the minimum required descriptor
+          cat > mule-app/mule-artifact.json << EOF
+          {
+            "minMuleVersion": "4.4.0",
+            "name": "${{ steps.app_name.outputs.name }}"
+          }
+          EOF
+
+      - name: Package as JAR
+        run: |
+          cd mule-app
+          jar -cf ${{ steps.app_name.outputs.name }}.jar src mule-artifact.json
+          cd ..
+
+      - name: Get Anypoint token
+        id: get_token
+        run: |
+          TOKEN_RESPONSE=$(curl -s -X POST "https://anypoint.mulesoft.com/accounts/api/v2/oauth2/token" \
+            -H "Content-Type: application/json" \
+            -d "{\"client_id\": \"${{ secrets.ANYPOINT_CLIENT_ID }}\", \"client_secret\": \"${{ secrets.ANYPOINT_CLIENT_SECRET }}\", \"grant_type\": \"client_credentials\"}")
+          
+          echo "Auth response: $TOKEN_RESPONSE"
+          
+          ACCESS_TOKEN=$(echo $TOKEN_RESPONSE | grep -o '"access_token":"[^"]*' | sed 's/"access_token":"//g' | sed 's/"//g')
+          
+          if [ -z "$ACCESS_TOKEN" ]; then
+            echo "Failed to get access token"
+            echo "Response: $TOKEN_RESPONSE"
+            exit 1
+          fi
+          
+          echo "access_token=$ACCESS_TOKEN" >> $GITHUB_OUTPUT
+
+      - name: Check permissions
+        run: |
+          # Get user permissions 
+          PERM_RESPONSE=$(curl -s "https://anypoint.mulesoft.com/accounts/api/me" \
+            -H "Authorization: Bearer ${{ steps.get_token.outputs.access_token }}")
+          
+          echo "User permissions: $PERM_RESPONSE"
+          
+          # Check if the user has permissions for CloudHub
+          if echo "$PERM_RESPONSE" | grep -q "cloudhub"; then
+            echo "User has CloudHub permissions"
+          else
+            echo "WARNING: User may not have CloudHub permissions"
+          fi
+
+      - name: Deploy to CloudHub
+        run: |
+          # Use the specific Sandbox environment ID from your output
+          SANDBOX_ENV_ID="a30fae48-ce0e-4371-9fc6-ff8c0d2d7252"
+          
+          echo "Attempting deployment using environment ID: $SANDBOX_ENV_ID"
+          DEPLOYMENT_RESPONSE=$(curl -s -X POST "https://anypoint.mulesoft.com/cloudhub/api/v2/applications" \
+            -H "Authorization: Bearer ${{ steps.get_token.outputs.access_token }}" \
+            -H "x-anypnt-env-id: $SANDBOX_ENV_ID" \
+            -H "Content-Type: multipart/form-data" \
+            -F "file=@mule-app/${{ steps.app_name.outputs.name }}.jar" \
+            -F "autoStart=true" \
+            -F "appInfoJson={\"domain\":\"${{ steps.app_name.outputs.name }}\",\"businessGroupId\":\"ed678fab-d850-43e4-86b8-1c7ccfbc907a\",\"environmentId\":\"$SANDBOX_ENV_ID\",\"workers\":{\"amount\":1,\"type\":{\"name\":\"Micro\"}},\"region\":\"us-east-1\",\"muleVersion\":\"4.4.0\",\"properties\":{\"http.port\":\"8081\"}}")
+          
+          echo "Full deployment response: $DEPLOYMENT_RESPONSE"
+          
+          # Properly check for deployment errors
+          if echo "$DEPLOYMENT_RESPONSE" | grep -q "User unauthorized" || echo "$DEPLOYMENT_RESPONSE" | grep -q "error"; then
+            echo "Error in deployment response"
+            echo "Status: FAILED"
+            exit 1
+          else
+            echo "Deployment appears to have been initiated successfully"
+            echo "Status: SUCCESS"
+          fi
+          
+          echo "Deployment initiated. Your API will be available at:"
+          echo "https://${{ steps.app_name.outputs.name }}.us-east-1.cloudhub.io/getresult"
