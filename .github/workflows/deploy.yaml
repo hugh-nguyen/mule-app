@@ -16,7 +16,7 @@ env:
   REPLICAS: 1
 
   # ——— IDs from the screenshot ———————————————————————————
-  ANYPOINT_ORG: ed678fab-d850-43e4-86b8-1c7cfcbc907a     #  Business‑group ID
+  ANYPOINT_ORG: ed678fab-d850-43e4-86b8-1c7ccfbc907a     #  Business‑group ID
   ANYPOINT_ENV: a30fae48-ce0e-4371-9fc6-ff8c0d2d7252     #  Environment  ID
   # ————————————————————————————————————————————————————
 
