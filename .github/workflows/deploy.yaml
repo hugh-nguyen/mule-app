@@ -49,7 +49,7 @@ jobs:
           http.port=8081
           EOF
           
-          # Create the minimal required descriptor
+          # Create the minimum required descriptor
           cat > mule-app/mule-artifact.json << EOF
           {
             "minMuleVersion": "4.4.0",
@@ -97,34 +97,19 @@ jobs:
             echo "WARNING: User may not have CloudHub permissions"
           fi
 
-      - name: Create Application on CloudHub 2.0
+      - name: Deploy to CloudHub 2.0 using Deployments API
         run: |
-          echo "Creating application on CloudHub 2.0..."
-          CREATE_RESPONSE=$(curl -L -s -X POST "https://anypoint.mulesoft.com/runtime-manager/api/v2/applications" \
-            -H "Authorization: Bearer ${{ steps.get_token.outputs.access_token }}" \
-            -H "Content-Type: application/json" \
-            -d '{
-                  "name": "'${{ steps.app_name.outputs.name }}'",
-                  "businessGroupId": "ed678fab-d850-43e4-86b8-1c7ccfbc907a",
-                  "environmentId": "a30fae48-ce0e-4371-9fc6-ff8c0d2d7252",
-                  "region": "us-east-1",
-                  "runtimeVersion": "4.4.0",
-                  "workers": { "amount": 1, "type": { "name": "Micro" } }
-                }')
-          echo "Application creation response: $CREATE_RESPONSE"
-
-      - name: Deploy Application Archive to CloudHub 2.0
-        run: |
-          echo "Deploying application archive..."
-          DEPLOY_RESPONSE=$(curl -L -s -X PATCH "https://anypoint.mulesoft.com/runtime-manager/api/v2/applications/${{ steps.app_name.outputs.name }}/deploy" \
+          echo "Attempting deployment using CloudHub 2.0 Deployments API"
+          DEPLOYMENT_RESPONSE=$(curl -L -s -X POST "https://anypoint.mulesoft.com/runtime-manager/api/v2/deployments" \
             -H "Authorization: Bearer ${{ steps.get_token.outputs.access_token }}" \
             -H "Content-Type: multipart/form-data" \
             -F "file=@mule-app/${{ steps.app_name.outputs.name }}.jar" \
             -F "autoStart=true" \
-            -F "appInfoJson={\"name\":\"${{ steps.app_name.outputs.name }}\",\"properties\":{\"http.port\":\"8081\"}}" )
-          echo "Deployment response: $DEPLOY_RESPONSE"
+            -F "appInfoJson={\"name\":\"${{ steps.app_name.outputs.name }}\",\"businessGroupId\":\"ed678fab-d850-43e4-86b8-1c7ccfbc907a\",\"environmentId\":\"a30fae48-ce0e-4371-9fc6-ff8c0d2d7252\",\"region\":\"us-east-1\",\"runtimeVersion\":\"4.4.0\",\"workers\":{\"amount\":1,\"type\":{\"name\":\"Micro\"}},\"properties\":{\"http.port\":\"8081\"}}")
           
-          if echo "$DEPLOY_RESPONSE" | grep -q "error"; then
+          echo "Full deployment response: $DEPLOYMENT_RESPONSE"
+          
+          if echo "$DEPLOYMENT_RESPONSE" | grep -q "error"; then
             echo "Error in deployment response"
             exit 1
           else
