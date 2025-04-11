@@ -94,8 +94,8 @@ jobs:
           anypoint-cli-v4 exchange:asset:upload \
             --type "app" \
             --name "$APP_NAME" \
-            "$ANYPOINT_ORG/$ASSET_ID/$VERSION" \
-            "mule-application.jar"
+            --files="{\"mule-application.jar\":\"$FULL_PATH\"}" \
+            "$ANYPOINT_ORG/$ASSET_ID/$VERSION"
 
       - name: Verify upload by listing Exchange assets
         run: |
