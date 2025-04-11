@@ -104,8 +104,8 @@ jobs:
               -H "x-anypnt-org-id: ed678fab-d850-43e4-86b8-1c7ccfbc907a")
           echo "Server list: $SERVER_LIST"
           
-          # Use jq to parse the first server's id if available.
-          SERVER_ID=$(echo "$SERVER_LIST" | jq -r 'if length > 0 then .[0].id else empty end')
+          # Use jq to parse the first server's id if available from the "data" array.
+          SERVER_ID=$(echo "$SERVER_LIST" | jq -r 'if (.data | length) > 0 then .data[0].id else empty end')
           
           if [ -z "$SERVER_ID" ] || [ "$SERVER_ID" = "null" ]; then
             echo "No servers found. Registering a new server..."
@@ -125,6 +125,7 @@ jobs:
           fi
           echo "Server ID: $SERVER_ID"
           echo "server_id=$SERVER_ID" >> $GITHUB_OUTPUT
+
 
       # Finally, deploy your application using the Hybrid API,
       # specifying the registered server's ID as the target.
