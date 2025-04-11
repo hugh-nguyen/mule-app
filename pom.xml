@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.example</groupId>
+  <groupId>ed678fab-d850-43e4-86b8-1c7ccfbc907a</groupId>
   <artifactId>mule-service</artifactId>
   <version>0.0.1</version>
   <packaging>mule-application</packaging>
@@ -29,7 +29,6 @@
   </build>
 
   <dependencies>
-    <!-- HTTP connector required by your Mule flow -->
     <dependency>
       <groupId>org.mule.connectors</groupId>
       <artifactId>mule-http-connector</artifactId>
