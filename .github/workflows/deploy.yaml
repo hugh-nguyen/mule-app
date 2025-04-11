@@ -88,7 +88,4 @@ jobs:
             "$DEPLOYMENT_TARGET_ID" \
             "$RUNTIME_VERSION" \
             --file "$FILE" \
-            --worker-type "$WORKER_TYPE" \
-            --replicas "$REPLICAS" \
-            --redeploy --yes
-
+            --replicas "$REPLICAS"
