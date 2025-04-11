@@ -72,10 +72,10 @@ jobs:
       ANYPOINT_ENV: Sandbox 
 
       APP_NAME: mule-service
-      RUNTIME_VERSION: 4.4.0
+      # RUNTIME_VERSION: 4.4.0
       REPLICAS: 1
 
-      DEPLOYMENT_TARGET_ID: 14ea2e0c-40a3-44c0-8d25-2a8e6020a19d
+      # DEPLOYMENT_TARGET_ID: 14ea2e0c-40a3-44c0-8d25-2a8e6020a19d
       REGION: ap-southeast-2
 
     steps:
@@ -154,7 +154,8 @@ jobs:
 
           anypoint-cli-v4 runtime-mgr application deploy \
             "$APP_NAME" \
-            "$DEPLOYMENT_TARGET_ID" \
-            "$RUNTIME_VERSION" \
+            "cloudhub-us-east-2" \
+            " 4.6.0" \
             "$ASSET_ID" \
+            --assetVersion "$VERSION" \
             --replicas "$REPLICAS"

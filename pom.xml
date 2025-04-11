@@ -20,14 +20,17 @@
 
   <build>
     <plugins>
-      <plugin>
+        <plugin>
         <groupId>org.mule.tools.maven</groupId>
         <artifactId>mule-maven-plugin</artifactId>
         <version>4.1.1</version>
         <extensions>true</extensions>
-      </plugin>
+        <configuration>
+            <classifier>mule-application</classifier>
+        </configuration>
+        </plugin>
     </plugins>
-  </build>
+    </build>
 
   <dependencies>
     <dependency>
