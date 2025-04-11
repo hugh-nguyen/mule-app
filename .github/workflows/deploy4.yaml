@@ -90,6 +90,8 @@ jobs:
           
           # Use a simplified version with minimal quoting issues
           anypoint-cli-v4 exchange:asset:upload \
+            --type "mule-application" \
+            --name "$APP_NAME" \
             "$ANYPOINT_ORG/$ASSET_ID/$VERSION" \
             "$FULL_PATH"
 
