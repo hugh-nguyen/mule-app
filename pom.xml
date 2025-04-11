@@ -83,8 +83,8 @@
             <url>https://repo.maven.apache.org/maven2/</url>
         </pluginRepository>
         <pluginRepository>
-            <id>central</id>
-            <url>https://repo.maven.apache.org/maven2/</url>
+            <id>mulesoft-releases</id>
+            <url>https://repository.mulesoft.org/releases/</url>
         </pluginRepository>
     </pluginRepositories>
 </project>
