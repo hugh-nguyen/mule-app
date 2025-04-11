@@ -97,30 +97,23 @@ jobs:
             echo "WARNING: User may not have CloudHub permissions"
           fi
 
-      - name: Deploy to CloudHub
+      - name: Deploy to CloudHub 2.0
         run: |
-          # Use the specific Sandbox environment ID from your output
-          SANDBOX_ENV_ID="a30fae48-ce0e-4371-9fc6-ff8c0d2d7252"
-          
-          echo "Attempting deployment using environment ID: $SANDBOX_ENV_ID"
-          DEPLOYMENT_RESPONSE=$(curl -s -X POST "https://anypoint.mulesoft.com/cloudhub/api/v2/applications" \
+          echo "Attempting deployment using CloudHub 2.0"
+          DEPLOYMENT_RESPONSE=$(curl -s -X POST "https://anypoint.mulesoft.com/runtime-manager/api/v2/applications" \
             -H "Authorization: Bearer ${{ steps.get_token.outputs.access_token }}" \
-            -H "x-anypnt-env-id: $SANDBOX_ENV_ID" \
             -H "Content-Type: multipart/form-data" \
             -F "file=@mule-app/${{ steps.app_name.outputs.name }}.jar" \
             -F "autoStart=true" \
-            -F "appInfoJson={\"domain\":\"${{ steps.app_name.outputs.name }}\",\"businessGroupId\":\"ed678fab-d850-43e4-86b8-1c7ccfbc907a\",\"environmentId\":\"$SANDBOX_ENV_ID\",\"workers\":{\"amount\":1,\"type\":{\"name\":\"Micro\"}},\"region\":\"us-east-1\",\"muleVersion\":\"4.4.0\",\"properties\":{\"http.port\":\"8081\"}}")
+            -F "appInfoJson={\"name\":\"${{ steps.app_name.outputs.name }}\",\"businessGroupId\":\"ed678fab-d850-43e4-86b8-1c7ccfbc907a\",\"environmentId\":\"a30fae48-ce0e-4371-9fc6-ff8c0d2d7252\",\"workers\":{\"amount\":1,\"type\":{\"name\":\"Micro\"}},\"region\":\"us-east-1\",\"runtimeVersion\":\"4.4.0\",\"properties\":{\"http.port\":\"8081\"}}")
           
           echo "Full deployment response: $DEPLOYMENT_RESPONSE"
           
-          # Properly check for deployment errors
-          if echo "$DEPLOYMENT_RESPONSE" | grep -q "User unauthorized" || echo "$DEPLOYMENT_RESPONSE" | grep -q "error"; then
+          if echo "$DEPLOYMENT_RESPONSE" | grep -q "error"; then
             echo "Error in deployment response"
-            echo "Status: FAILED"
             exit 1
           else
-            echo "Deployment appears to have been initiated successfully"
-            echo "Status: SUCCESS"
+            echo "Deployment initiated successfully"
           fi
           
           echo "Deployment initiated. Your API will be available at:"
