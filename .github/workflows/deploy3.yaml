@@ -1,4 +1,4 @@
-name: Build & Deploy to CloudHub 2.0
+name: DEPLOY3
 
 on:
   push:
@@ -88,13 +88,8 @@ jobs:
             "$DEPLOYMENT_TARGET_ID" \
             "$RUNTIME_VERSION" \
             "$FILE" \
-            --client_id "${ANYPOINT_CLIENT_ID}" \
-            --client_secret "${ANYPOINT_CLIENT_SECRET}" \
-            --organization "${ANYPOINT_ORG}" \
-            --environment "${ANYPOINT_ENV}" \
             --assetVersion "0.0.1" \
             --replicas 1 \
             --replicaSize 0.5 \
             --releaseChannel "LTS" \
-            --javaVersion 8 \
-            --property "env:dev"
+            --javaVersion 8 

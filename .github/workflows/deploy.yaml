@@ -1,4 +1,4 @@
-name: Deploy to Cloudhub 2.0
+name: DEPLOY1
 
 on:
   push:
@@ -9,13 +9,13 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     env:
-        ANYPOINT_CLIENT_ID:     ${{ secrets.ANYPOINT_CLIENT_ID }}
-        ANYPOINT_CLIENT_SECRET: ${{ secrets.ANYPOINT_CLIENT_SECRET }}
-        ANYPOINT_ORG: ed678fab-d850-43e4-86b8-1c7ccfbc907a
-        ANYPOINT_ENV: Sandbox 
+      ANYPOINT_CLIENT_ID:     ${{ secrets.ANYPOINT_CLIENT_ID }}
+      ANYPOINT_CLIENT_SECRET: ${{ secrets.ANYPOINT_CLIENT_SECRET }}
+      ANYPOINT_ORG: ed678fab-d850-43e4-86b8-1c7ccfbc907a
+      ANYPOINT_ENV: Sandbox 
 
-        DEPLOYMENT_TARGET_ID: 14ea2e0c-40a3-44c0-8d25-2a8e6020a19d
-        REGION: ap-southeast-2
+      DEPLOYMENT_TARGET_ID: 14ea2e0c-40a3-44c0-8d25-2a8e6020a19d
+      REGION: ap-southeast-2
     
     steps:
     - name: Checkout code
@@ -45,10 +45,6 @@ jobs:
           "${DEPLOYMENT_TARGET_ID}" \
           "4.4.0" \
           "$JAR_FILE" \
-          --client_id "${ANYPOINT_CLIENT_ID}" \
-          --client_secret "${ANYPOINT_CLIENT_SECRET}" \
-          --organization "${ANYPOINT_ORG}" \
-          --environment "${ANYPOINT_ENV}" \
           --assetVersion "0.0.1" \
           --replicas 1 \
           --replicaSize 0.5 \
