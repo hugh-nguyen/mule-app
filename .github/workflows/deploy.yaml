@@ -100,7 +100,7 @@ jobs:
       - name: Deploy to CloudHub 2.0
         run: |
           echo "Attempting deployment using CloudHub 2.0"
-          DEPLOYMENT_RESPONSE=$(curl -s -X POST "https://anypoint.mulesoft.com/runtime-manager/api/v2/applications" \
+          DEPLOYMENT_RESPONSE=$(curl -L -s -X POST "https://anypoint.mulesoft.com/runtime-manager/api/v2/applications" \
             -H "Authorization: Bearer ${{ steps.get_token.outputs.access_token }}" \
             -H "Content-Type: multipart/form-data" \
             -F "file=@mule-app/${{ steps.app_name.outputs.name }}.jar" \
@@ -118,3 +118,4 @@ jobs:
           
           echo "Deployment initiated. Your API will be available at:"
           echo "https://${{ steps.app_name.outputs.name }}.us-east-1.cloudhub.io/getresult"
+
