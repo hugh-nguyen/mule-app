@@ -64,10 +64,10 @@ jobs:
 
       APP_NAME: mule-service
       RUNTIME_VERSION: 4.4.0
-      WORKER_TYPE: CH2_MEDIUM        # ← rename so the flag isn’t empty
       REPLICAS: 1
 
       DEPLOYMENT_TARGET_ID: 14ea2e0c-40a3-44c0-8d25-2a8e6020a19d
+      REGION: ap-southeast-2
 
     steps:
       - name: Download build artifact
