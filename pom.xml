@@ -14,7 +14,7 @@
     <mule.maven.plugin.version>3.8.0</mule.maven.plugin.version>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
-    <type>app</type>
+    <type>rest-api</type>
   </properties>
 
   <build>
