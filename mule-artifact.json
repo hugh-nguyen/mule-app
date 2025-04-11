@@ -1,4 +1,4 @@
 {
-    "minMuleVersion": "4.4.0",
-    "name": "mule-service"
-  }
+  "minMuleVersion": "4.4.0",
+  "name": "mule-service"
+}
