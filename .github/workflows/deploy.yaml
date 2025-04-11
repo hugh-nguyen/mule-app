@@ -64,7 +64,7 @@ jobs:
         id: ids
         run: |
           # 1) Business‑group ID
-
+          echo "Check 1"
           anypoint-cli --no-color account business-groups list --output json
 
           ORG_ID=$(
@@ -73,7 +73,7 @@ jobs:
           )
 
           # 2) Environment ID *inside* that BG
-
+          echo "Check 2"
           anypoint-cli --no-color account environments list --organization "$ORG_ID" --output json
 
           ENV_ID=$(
