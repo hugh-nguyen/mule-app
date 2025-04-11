@@ -1,4 +1,4 @@
-name: Build & Deploy to CloudHub 2.0
+name: Build & Deploy to CloudHub 2.0
 
 on:
   push:
@@ -11,11 +11,11 @@ env:
   REGION: ap-southeast-2
   WORKER_SIZE: CH2_MEDIUM
   REPLICAS: 1
-  BUSINESS_GROUP: mule-test          # organisation / business‑group name
+  BUSINESS_GROUP: mule-test          # org / business‑group
   ENVIRONMENT: sandbox               # Anypoint environment
 
 jobs:
-  # ------------------------------------------------------------------------
+# ---------------------------------------------------------------------------
   build:
     runs-on: ubuntu-latest
     steps:
@@ -36,43 +36,30 @@ jobs:
         with:
           name: mule-app
           path: target/*.jar
-          if-no-files-found: error      # fail fast if build produced nothing
-  # ------------------------------------------------------------------------
+          if-no-files-found: error
+# ---------------------------------------------------------------------------
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    environment: production            # (optional) GitHub env for approvals
+    environment: production           # (optional) manual‑approval gate
+    env:                              # ← credentials visible to every step
+      ANYPOINT_CLIENT_ID:     ${{ secrets.ANYPOINT_CLIENT_ID }}
+      ANYPOINT_CLIENT_SECRET: ${{ secrets.ANYPOINT_CLIENT_SECRET }}
+      ANYPOINT_ORG:           mule-test
+      ANYPOINT_ENV:           sandbox
     steps:
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
           name: mule-app
 
-      # ---------------------------------------------------------------
-      # CLI install & one‑time, non‑interactive configuration
-      # ---------------------------------------------------------------
       - name: Install Anypoint CLI
         run: npm install -g anypoint-cli
 
-      - name: Configure Anypoint CLI
-        env:
-          ANYPOINT_CLIENT_ID: ${{ secrets.ANYPOINT_CLIENT_ID }}
-          ANYPOINT_CLIENT_SECRET: ${{ secrets.ANYPOINT_CLIENT_SECRET }}
-        run: |
-          # Store credentials in CLI config (avoids prompts later)
-          anypoint-cli configure set client_id "$ANYPOINT_CLIENT_ID"
-          anypoint-cli configure set client_secret "$ANYPOINT_CLIENT_SECRET"
-
-          # Pre‑select business group & environment so commands are non‑interactive
-          anypoint-cli configure set organization "$BUSINESS_GROUP"
-          anypoint-cli configure set environment "$ENVIRONMENT"
-
-          # (Optional) silence the “telemetry” question forever
-          anypoint-cli configure set telemetry off
-
-      # ---------------------------------------------------------------
-      # Deploy the freshly‑built JAR to CloudHub 2.0
-      # ---------------------------------------------------------------
+      # -----------------------------------------------------------
+      # Deploy the JAR — credentials & context come from env‑vars,
+      # so the CLI never prompts for input.
+      # -----------------------------------------------------------
       - name: Deploy to CloudHub 2.0
         run: |
           FILE=$(ls *.jar | head -n 1)
@@ -85,5 +72,5 @@ jobs:
             --region "$REGION" \
             --worker-type "$WORKER_SIZE" \
             --replicas "$REPLICAS" \
-            --redeploy        \
-            --yes             # auto‑confirm overwrite if app already exists
+            --redeploy \
+            --yes                       # auto‑confirm overwrite
