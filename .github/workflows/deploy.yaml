@@ -64,12 +64,18 @@ jobs:
         id: ids
         run: |
           # 1) Business‑group ID
+
+          anypoint-cli --no-color account business-groups list --output json
+
           ORG_ID=$(
             anypoint-cli --no-color account business-groups list --output json |
             jq -r '.[] | select(.name=="mule-test") | .id'
           )
 
           # 2) Environment ID *inside* that BG
+
+          anypoint-cli --no-color account environments list --organization "$ORG_ID" --output json
+
           ENV_ID=$(
             anypoint-cli --no-color account environments list \
                         --organization "$ORG_ID" --output json |
