@@ -128,8 +128,10 @@ jobs:
           UPLOAD_RESPONSE=$(curl -s -w "%{http_code}" \
             -H "Authorization: Bearer $ACCESS_TOKEN" \
             -H "x-sync-publication: true" \
+            -H "Content-Type: multipart/form-data" \
             -F "files.pom=@pom.xml" \
             -F "files.zip=@temp_upload/app.zip" \
+            -F "name=$APP_NAME" \
             "https://anypoint.mulesoft.com/exchange/api/v2/organizations/$ANYPOINT_ORG/assets/$ANYPOINT_ORG/$ASSET_ID/$VERSION")
           
           HTTP_CODE=$(echo "$UPLOAD_RESPONSE" | tail -n1)
