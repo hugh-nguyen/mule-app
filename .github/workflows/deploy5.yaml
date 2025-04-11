@@ -86,16 +86,20 @@ jobs:
           FILE=$(ls *.jar | head -n 1)
           FULL_PATH=$(realpath "$FILE")
           echo "!!Uploading $FULL_PATH to Exchange..."
-          echo "!!$ANYPOINT_ORG/$ASSET_ID/$VERSION"
           
-          cp "$FULL_PATH" mule-application.jar
+          # Create a zip file containing the JAR with the correct structure
+          mkdir -p package
+          cp "$FULL_PATH" package/mule-application.jar
+          cd package
+          zip -r ../package.zip .
+          cd ..
           
-          # Use a simplified version with minimal quoting issues
+          # Upload as a zip package
           anypoint-cli-v4 exchange:asset:upload \
             --type "app" \
             --name "$APP_NAME" \
-            --files="{\"mule-application.jar\":\"$FULL_PATH\"}" \
-            "$ANYPOINT_ORG/$ASSET_ID/$VERSION"
+            "$ANYPOINT_ORG/$ASSET_ID/$VERSION" \
+            "package.zip"
 
       - name: Verify upload by listing Exchange assets
         run: |
