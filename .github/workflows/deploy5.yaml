@@ -73,14 +73,6 @@ jobs:
       REGION: ap-southeast-2
 
     steps:
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: mule-app
-
-      - name: Install Anypoint CLI
-        run: npm install -g anypoint-cli-v4
-      
       - name: Upload to Exchange
         run: |
           FILE=$(ls *.jar | head -n 1)
@@ -88,12 +80,14 @@ jobs:
           echo "!!Uploading $FULL_PATH to Exchange..."
           echo "!!$ANYPOINT_ORG/$ASSET_ID/$VERSION"
           
+          cp "$FULL_PATH" mule-application.jar
+          
           # Use a simplified version with minimal quoting issues
           anypoint-cli-v4 exchange:asset:upload \
             --type "app" \
             --name "$APP_NAME" \
             "$ANYPOINT_ORG/$ASSET_ID/$VERSION" \
-            "$FULL_PATH"
+            "mule-application.jar"
 
       - name: Verify upload by listing Exchange assets
         run: |
