@@ -99,12 +99,24 @@ jobs:
           # Find the JAR file
           JAR_FILE=$(find ./artifacts -name "*.jar" -type f | grep -v "original")
           
+          # Update the POM file to set the name and type properties
+          sed -i "s|<type>app</type>|<type>rest-api</type>|g" pom.xml
+          
+          # Add name property to POM if not present
+          if ! grep -q "<name>" pom.xml; then
+            sed -i "/<\/properties>/i\\    <name>Mule Service</name>" pom.xml
+          fi
+          
           # Create a ZIP file containing the JAR
           mkdir -p temp_upload
           cp "$JAR_FILE" temp_upload/
           cd temp_upload
           zip app.zip *.jar
           cd ..
+          
+          # Print updated POM for debugging
+          echo "Updated POM:"
+          cat pom.xml
           
           echo "Creating access token..."
           # Get access token using client credentials
@@ -125,13 +137,11 @@ jobs:
           fi
           
           echo "Uploading to Exchange..."
-          UPLOAD_RESPONSE=$(curl -s -w "%{http_code}" \
+          UPLOAD_RESPONSE=$(curl -s -v -w "\n%{http_code}" \
             -H "Authorization: Bearer $ACCESS_TOKEN" \
             -H "x-sync-publication: true" \
-            -H "Content-Type: multipart/form-data" \
             -F "files.pom=@pom.xml" \
             -F "files.zip=@temp_upload/app.zip" \
-            -F "name=$APP_NAME" \
             "https://anypoint.mulesoft.com/exchange/api/v2/organizations/$ANYPOINT_ORG/assets/$ANYPOINT_ORG/$ASSET_ID/$VERSION")
           
           HTTP_CODE=$(echo "$UPLOAD_RESPONSE" | tail -n1)
