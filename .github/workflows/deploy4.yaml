@@ -155,7 +155,7 @@ jobs:
           anypoint-cli-v4 runtime-mgr application deploy \
             "$APP_NAME" \
             "cloudhub-us-east-2" \
-            " 4.6.0" \
+            "4.6.0" \
             "$ASSET_ID" \
             --assetVersion "$VERSION" \
             --replicas "$REPLICAS"
