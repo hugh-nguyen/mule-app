@@ -1,0 +1,91 @@
+name: Build & Deploy to CloudHub 2.0
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+# ──────────────────────────────────────────────────────────────────────────────
+# CONSTANTS you’re unlikely to change often
+# ──────────────────────────────────────────────────────────────────────────────
+env:
+  APP_NAME: mule-service
+  RUNTIME_VERSION: 4.4.0
+  REGION: ap-southeast-2
+  WORKER_SIZE: CH2_MEDIUM
+  REPLICAS: 1
+
+  # ——— IDs from the screenshot ———————————————————————————
+  ANYPOINT_ORG: ed678fab-d850-43e4-86b8-1c7ccfbc907a     #  Business‑group ID
+  ANYPOINT_ENV: a30fae48-ce0e-4371-9fc6-ff8c0d2d7252     #  Environment  ID
+  # ————————————————————————————————————————————————————
+
+jobs:
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║ 1)  Build the Mule application                                          ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 8 + Maven 3.9
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 8
+          cache: maven
+
+      - name: Build Mule application
+        run: mvn -B clean package -DmuleDeploy
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mule-app
+          path: target/*.jar
+          if-no-files-found: error
+
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║ 2)  Deploy the JAR to CloudHub 2.0                                      ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: production          # optional GitHub env for approvals
+
+    # ▸  Credentials are injected as environment variables so every CLI call
+    #    sees them automatically (no interactive prompts).
+    env:
+      ANYPOINT_CLIENT_ID:     ${{ secrets.ANYPOINT_CLIENT_ID }}
+      ANYPOINT_CLIENT_SECRET: ${{ secrets.ANYPOINT_CLIENT_SECRET }}
+      ANYPOINT_ORG: ed678fab-d850-43e4-86b8-1c7ccfbc907a
+      ANYPOINT_ENV: Sandbox 
+
+      APP_NAME: mule-service
+      RUNTIME_VERSION: 4.4.0
+      REPLICAS: 1
+
+      DEPLOYMENT_TARGET_ID: 14ea2e0c-40a3-44c0-8d25-2a8e6020a19d
+      REGION: ap-southeast-2
+
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: mule-app
+
+      - name: Install Anypoint CLI
+        run: npm install -g anypoint-cli-v4
+
+      - name: Deploy to CloudHub 2.0
+        run: |
+          FILE=$(ls *.jar | head -n 1)
+          echo "Deploying $FILE to CloudHub 2.0 …"
+
+          anypoint-cli-v4 runtime-mgr application deploy \
+            "$APP_NAME" \
+            "$DEPLOYMENT_TARGET_ID" \
+            "$RUNTIME_VERSION" \
+            "$FILE" \
+            --replicas "$REPLICAS"
