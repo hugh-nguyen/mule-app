@@ -79,8 +79,8 @@
 
     <pluginRepositories>
         <pluginRepository>
-            <id>mulesoft-releases</id>
-            <url>https://repository.mulesoft.org/releases/</url>
+            <id>central</id>
+            <url>https://repo.maven.apache.org/maven2/</url>
         </pluginRepository>
         <pluginRepository>
             <id>central</id>
