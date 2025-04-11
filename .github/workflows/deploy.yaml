@@ -83,9 +83,9 @@ jobs:
           FILE=$(ls *.jar | head -n 1)
           echo "Deploying $FILE to CloudHub 2.0 …"
 
-          anypoint-cli-v4 runtime-mgr application deploy \
+          anypoint-cli-v4 --no-color runtime-mgr application deploy \
             "$APP_NAME" \
             "$DEPLOYMENT_TARGET_ID" \
             "$RUNTIME_VERSION" \
-            --file "$FILE" \
+            "$FILE" \
             --replicas "$REPLICAS"
