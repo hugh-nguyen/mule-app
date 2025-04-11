@@ -3,40 +3,29 @@ name: Build & Deploy to CloudHub 2.0
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:       # allow manual runs
+  workflow_dispatch:
 
 env:
-  # --- ❶ Values you may tweak once and forget -------------------------------
-  APP_NAME: mule-service            # <artifactId> in pom.xml
-  RUNTIME_VERSION: 4.4.0            # minMuleVersion / pom.xml
-  REGION: ap-southeast-2            # pick the CH2 region you use
-  WORKER_SIZE: CH2_MEDIUM           # CH2_SMALL | CH2_MEDIUM | CH2_LARGE …
-  REPLICAS: 1                       # number of workers
-  BUSINESS_GROUP: mule-test         # your business group name
-  ENVIRONMENT: sandbox              # your Anypoint environment
-  # -------------------------------------------------------------------------
+  APP_NAME: mule-service
+  RUNTIME_VERSION: 4.4.0
+  REGION: ap-southeast-2
+  WORKER_SIZE: CH2_MEDIUM
+  REPLICAS: 1
+  BUSINESS_GROUP: mule-test
+  ENVIRONMENT: sandbox
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Check-out source
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up JDK 8 + Maven
+      - name: Set up JDK 8 + Maven 3.9
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 8
           cache: maven
-        
-      - name: Cache Maven repo
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository
-          key: m2-${{ runner.os }}-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            m2-${{ runner.os }}-
 
       - name: Build Mule application
         run: mvn -B clean package -DmuleDeploy
@@ -45,13 +34,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: mule-app
-          path: |
-            target/*.jar                # mule-service-<version>-mule-application.jar
-  # -------------------------------------------------------------------------
+          path: target/*.jar
+          if-no-files-found: error   # <- optional but recommended
+
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    environment: production           # optional GitHub env for approvals
+    environment: production
     steps:
       - name: Download build artifact
         uses: actions/download-artifact@v4
@@ -66,7 +55,6 @@ jobs:
           ANYPOINT_CLIENT_ID: ${{ secrets.ANYPOINT_CLIENT_ID }}
           ANYPOINT_CLIENT_SECRET: ${{ secrets.ANYPOINT_CLIENT_SECRET }}
         run: |
-          # Non-interactive login (token cached in ~/.anypoint)
           anypoint-cli-v4 --client_id "$ANYPOINT_CLIENT_ID" \
                           --client_secret "$ANYPOINT_CLIENT_SECRET" \
                           --no-interactive account:login
@@ -87,4 +75,4 @@ jobs:
             --region "$REGION" \
             --worker-type "$WORKER_SIZE" \
             --replicas "$REPLICAS" \
-            --redeploy             # idempotent: updates if app exists
+            --redeploy
