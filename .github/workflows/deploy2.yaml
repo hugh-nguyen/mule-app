@@ -1,4 +1,4 @@
-name: Deploy MuleSoft API Hybrid
+name: Deploy MuleSoft API
 
 on:
   push:
@@ -9,21 +9,12 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      # Generate a unique application name using a timestamp.
-      - name: Generate unique app name
-        id: app_name
-        run: |
-          APP_NAME="mule-service-$(date +%Y%m%d%H%M%S)"
-          echo "name=$APP_NAME" >> $GITHUB_OUTPUT
-          echo "Using app name: $APP_NAME"
-
-      # Create a minimal Mule application structure.
       - name: Create minimal MuleSoft app
         run: |
+          # Create directory structure
           mkdir -p mule-app/src/main/mule
-          mkdir -p mule-app/src/main/resources
           
-          # Create the Mule configuration file (main.xml).
+          # Create the Mule XML config with the /getresult endpoint
           cat > mule-app/src/main/mule/main.xml << 'EOF'
           <?xml version="1.0" encoding="UTF-8"?>
           <mule xmlns="http://www.mulesoft.org/schema/mule/core"
@@ -32,9 +23,11 @@ jobs:
                 xsi:schemaLocation="
                   http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
                   http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+          
               <http:listener-config name="api-http-listener-config">
-                  <http:listener-connection host="0.0.0.0" port="8081"/>
+                  <http:listener-connection host="0.0.0.0" port="8081" />
               </http:listener-config>
+          
               <flow name="get-result-flow">
                   <http:listener config-ref="api-http-listener-config" path="/getresult"/>
                   <set-payload value="0.0.1"/>
@@ -42,27 +35,20 @@ jobs:
           </mule>
           EOF
           
-          # Create properties file.
-          cat > mule-app/src/main/resources/mule-app.properties << 'EOF'
-          http.port=8081
-          EOF
-          
-          # Create the minimal required Mule artifact descriptor.
-          cat > mule-app/mule-artifact.json << EOF
+          # Create the minimum required descriptor
+          cat > mule-app/mule-artifact.json << 'EOF'
           {
             "minMuleVersion": "4.4.0",
-            "name": "${{ steps.app_name.outputs.name }}"
+            "name": "mule-service"
           }
           EOF
 
-      # Package the application as a JAR.
       - name: Package as JAR
         run: |
           cd mule-app
-          jar -cf ${{ steps.app_name.outputs.name }}.jar src mule-artifact.json
+          jar -cf mule-service.jar src mule-artifact.json
           cd ..
 
-      # Obtain an Anypoint Platform token.
       - name: Get Anypoint token
         id: get_token
         run: |
@@ -70,82 +56,22 @@ jobs:
             -H "Content-Type: application/json" \
             -d "{\"client_id\": \"${{ secrets.ANYPOINT_CLIENT_ID }}\", \"client_secret\": \"${{ secrets.ANYPOINT_CLIENT_SECRET }}\", \"grant_type\": \"client_credentials\"}")
           
-          echo "Auth response: $TOKEN_RESPONSE"
+          ACCESS_TOKEN=$(echo $TOKEN_RESPONSE | grep -o '"access_token":"[^"]*' | sed 's/"access_token":"//')
           
-          ACCESS_TOKEN=$(echo $TOKEN_RESPONSE | grep -o '"access_token":"[^"]*' | sed 's/"access_token":"//g' | sed 's/"//g')
           if [ -z "$ACCESS_TOKEN" ]; then
             echo "Failed to get access token"
             echo "Response: $TOKEN_RESPONSE"
             exit 1
           fi
           
+          echo "::add-mask::$ACCESS_TOKEN"
           echo "access_token=$ACCESS_TOKEN" >> $GITHUB_OUTPUT
 
-      # Check user permissions (optional).
-      - name: Check permissions
+      - name: Deploy to CloudHub
         run: |
-          PERM_RESPONSE=$(curl -s "https://anypoint.mulesoft.com/accounts/api/me" \
-            -H "Authorization: Bearer ${{ steps.get_token.outputs.access_token }}")
-          echo "User permissions: $PERM_RESPONSE"
-          if echo "$PERM_RESPONSE" | grep -q "cloudhub"; then
-            echo "User has CloudHub permissions"
-          else
-            echo "WARNING: User may not have CloudHub permissions"
-          fi
-
-      # Get existing Hybrid servers or register a new one if none exist.
-      - name: Get or Create Hybrid Server
-        id: get_server
-        run: |
-          echo "Checking for existing Hybrid servers..."
-          SERVER_LIST=$(curl -s -X GET "https://anypoint.mulesoft.com/hybrid/api/v1/servers" \
-              -H "authorization: Bearer ${{ steps.get_token.outputs.access_token }}" \
-              -H "x-anypnt-env-id: a30fae48-ce0e-4371-9fc6-ff8c0d2d7252" \
-              -H "x-anypnt-org-id: ed678fab-d850-43e4-86b8-1c7ccfbc907a")
-          echo "Server list: $SERVER_LIST"
-          
-          # Use jq to parse the first server's id if available from the "data" array.
-          SERVER_ID=$(echo "$SERVER_LIST" | jq -r 'if (.data | length) > 0 then .data[0].id else empty end')
-          
-          if [ -z "$SERVER_ID" ] || [ "$SERVER_ID" = "null" ]; then
-            echo "No servers found. Registering a new server..."
-            REG_RESPONSE=$(curl -s -X POST "https://anypoint.mulesoft.com/hybrid/api/v1/servers" \
-                -H "authorization: Bearer ${{ steps.get_token.outputs.access_token }}" \
-                -H "content-type: application/json" \
-                -H "x-anypnt-env-id: a30fae48-ce0e-4371-9fc6-ff8c0d2d7252" \
-                -H "x-anypnt-org-id: ed678fab-d850-43e4-86b8-1c7ccfbc907a" \
-                -d '{
-                  "muleVersion": "4.4.0",
-                  "gatewayVersion": "1.0",
-                  "signatureRequest": "'"${{ secrets.ANYPOINT_SIGNATURE_REQUEST }}"'",
-                  "muleLabel": "GitHubWorkflowServer"
-                }')
-            echo "Registration response: $REG_RESPONSE"
-            SERVER_ID=$(echo "$REG_RESPONSE" | jq -r '.id')
-          fi
-          echo "Server ID: $SERVER_ID"
-          echo "server_id=$SERVER_ID" >> $GITHUB_OUTPUT
-
-
-      # Finally, deploy your application using the Hybrid API,
-      # specifying the registered server's ID as the target.
-      - name: Deploy Application Using Hybrid API
-        run: |
-          echo "Deploying application using Hybrid API..."
-          DEPLOYMENT_RESPONSE=$(curl -L -s -X POST "https://anypoint.mulesoft.com/hybrid/api/v1/applications" \
-            -H "authorization: Bearer ${{ steps.get_token.outputs.access_token }}" \
-            -H "content-type: multipart/form-data" \
-            -H "x-anypnt-env-id: a30fae48-ce0e-4371-9fc6-ff8c0d2d7252" \
-            -H "x-anypnt-org-id: ed678fab-d850-43e4-86b8-1c7ccfbc907a" \
-            -F "file=@mule-app/${{ steps.app_name.outputs.name }}.jar" \
-            -F "artifactName=${{ steps.app_name.outputs.name }}" \
-            -F "targetId=${{ steps.get_server.outputs.server_id }}")
-          
-          echo "Full deployment response: $DEPLOYMENT_RESPONSE"
-          if echo "$DEPLOYMENT_RESPONSE" | grep -q "error"; then
-            echo "Error in deployment response"
-            exit 1
-          else
-            echo "Deployment initiated successfully"
-          fi
-          echo "Deployment initiated."
+          curl -X POST "https://anypoint.mulesoft.com/cloudhub/api/v2/applications" \
+            -H "Authorization: Bearer ${{ steps.get_token.outputs.access_token }}" \
+            -H "Content-Type: multipart/form-data" \
+            -F "file=@mule-app/mule-service.jar" \
+            -F "autoStart=true" \
+            -F "appInfoJson={\"domain\":\"mule-service\",\"workers\":{\"amount\":1,\"type\":{\"name\":\"Micro\"}},\"region\":\"us-east-1\",\"muleVersion\":\"4.4.0\"}"

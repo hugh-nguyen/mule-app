@@ -69,19 +69,19 @@ jobs:
           name: mule-app
 
       - name: Install Anypoint CLI
-        run: npm install -g anypoint-cli
+        run: npm install -g anypoint-cli-v4
 
       - name: Deploy to CloudHub 2.0
         run: |
           FILE=$(ls *.jar | head -n 1)
           echo "Deploying $FILE to CloudHub 2.0 …"
 
-          anypoint-cli --no-color runtime-mgr cloudhub2 applications deploy \
-            --name         "$APP_NAME" \
-            --file         "$FILE" \
-            --runtime      "$RUNTIME_VERSION" \
-            --region       "$REGION" \
-            --worker-type  "$WORKER_SIZE" \
-            --replicas     "$REPLICAS" \
-            --redeploy \
-            --yes
+          anypoint-cli-v4 --no-color runtime-mgr application deploy \
+            "$APP_NAME" \
+            "$DEPLOYMENT_TARGET_ID" \
+            "$RUNTIME_VERSION" \
+            --file "$FILE" \
+            --worker-type "$WORKER_TYPE" \
+            --replicas "$REPLICAS" \
+            --redeploy --yes
+
