@@ -89,7 +89,7 @@ jobs:
           
           # Use a simplified version with minimal quoting issues
           anypoint-cli-v4 exchange:asset:upload \
-            "$GROUP_ID/$ASSET_ID/$VERSION" \
+            "$ANYPOINT_ORG/$ASSET_ID/$VERSION" \
             "$FULL_PATH"
 
       - name: Deploy to CloudHub 2.0
