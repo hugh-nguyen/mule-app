@@ -60,15 +60,29 @@ jobs:
       # Deploy the JAR — credentials & context come from env‑vars,
       # so the CLI never prompts for input.
       # -----------------------------------------------------------
-      - name: Resolve org & environment IDs
+      - name: Resolve org & environment IDs
         id: ids
         run: |
-          ORG_ID=$(anypoint-cli account business-groups list --output json |
-                  jq -r '.[] | select(.name=="mule-test") | .id')
-          ENV_ID=$(anypoint-cli account environments list --organization "$ORG_ID" --output json |
-                  jq -r '.[] | select(.name=="Sandbox") | .id')
+          # 1) Business‑group ID
+          ORG_ID=$(
+            anypoint-cli --no-color account business-groups list --output json |
+            jq -r '.[] | select(.name=="mule-test") | .id'
+          )
+
+          # 2) Environment ID *inside* that BG
+          ENV_ID=$(
+            anypoint-cli --no-color account environments list \
+                        --organization "$ORG_ID" --output json |
+            jq -r '.[] | select(.name=="Sandbox") | .id'
+          )
+
+          echo "Resolved ORG_ID=$ORG_ID"
+          echo "Resolved ENV_ID=$ENV_ID"
+
+          # expose them to later steps
           echo "ORG_ID=$ORG_ID" >> $GITHUB_ENV
           echo "ENV_ID=$ENV_ID" >> $GITHUB_ENV
+
       - name: Deploy to CloudHub 2.0
         run: |
           FILE=$(ls *.jar | head -n 1)
