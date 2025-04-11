@@ -84,15 +84,13 @@ jobs:
       - name: Upload to Exchange
         run: |
           FILE=$(ls *.jar | head -n 1)
-          echo "Uploading $FILE to Exchange..."
+          FULL_PATH=$(realpath "$FILE")
+          echo "Uploading $FULL_PATH to Exchange..."
           
+          # Use a simplified version with minimal quoting issues
           anypoint-cli-v4 exchange:asset:upload \
-            --name "$APP_NAME" \
-            --description "Mule Service Application" \
-            --type "app" \
-            --properties='{"mainFile":"mule-service.jar"}' \
-            --files='{"mule-application.jar":"'$FILE'"}' \
-            "$GROUP_ID/$ASSET_ID/$VERSION"
+            "$GROUP_ID/$ASSET_ID/$VERSION" \
+            "$FULL_PATH"
 
       - name: Deploy to CloudHub 2.0
         run: |
