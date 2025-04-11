@@ -1,4 +1,4 @@
-name: DEPLOY4
+name: DEPLOY5
 
 on:
   push:
@@ -96,15 +96,17 @@ jobs:
       
       - name: Upload to Exchange using Anypoint CLI
         run: |
-          # Find the JAR file
-          JAR_FILE=$(find ./artifacts -name "*.jar" -type f | grep -v "original")
-          echo "Found JAR file: $JAR_FILE"
+          FILE=$(ls *.jar | head -n 1)
+          FULL_PATH=$(realpath "$FILE")
+          echo "!!Uploading $FULL_PATH to Exchange..."
+          echo "!!$ANYPOINT_ORG/$ASSET_ID/$VERSION"
           
-          # Upload to Exchange using Anypoint CLI
-          echo "Uploading to Exchange..."
+          # Use a simplified version with minimal quoting issues
           anypoint-cli-v4 exchange:asset:upload \
+            --type "app" \
+            --name "$APP_NAME" \
             "$ANYPOINT_ORG/$ASSET_ID/$VERSION" \
-            "$JAR_FILE"
+            "$FULL_PATH"
 
       - name: Verify upload by listing Exchange assets
         run: |
