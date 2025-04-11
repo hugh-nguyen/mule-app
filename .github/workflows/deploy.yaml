@@ -23,13 +23,12 @@ jobs:
       - name: Check‑out source
         uses: actions/checkout@v4
 
-      - name: Set up JDK 8 (Temurin)
+      - name: Set up JDK 8 + Maven
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 8
-          maven-version: 3.8.8      # 👈 stays compatible with mule‑maven‑plugin 3.8.0
-          cache: maven 
+          cache: maven
         
       - name: Cache Maven repo
         uses: actions/cache@v4
