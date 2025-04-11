@@ -6,7 +6,7 @@
 
   <groupId>ed678fab-d850-43e4-86b8-1c7ccfbc907a</groupId>
   <artifactId>mule-service</artifactId>
-  <version>0.0.2</version>
+  <version>0.0.3</version>
   <packaging>mule-application</packaging>
   <name>mule-service</name>
 
