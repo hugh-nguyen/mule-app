@@ -12,6 +12,6 @@
 
     <flow name="getResultFlow">
         <http:listener path="/getresult" config-ref="HTTP_Listener_config"/>
-        <set-payload value="0.0.3"/>
+        <set-payload value="0.0.4"/>
     </flow>
 </mule>

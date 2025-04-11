@@ -16,7 +16,7 @@ env:
   REPLICAS: 1
   GROUP_ID: com.example
   ASSET_ID: mule-service
-  VERSION: 0.0.3
+  VERSION: 0.0.4
 
   # ——— IDs from the screenshot ———————————————————————————
   ANYPOINT_ORG: ed678fab-d850-43e4-86b8-1c7ccfbc907a     #  Business‑group ID
@@ -106,7 +106,7 @@ jobs:
             "$APP_NAME" \
             "cloudhub-us-east-2" \
             "4.6.0" \
-            --gav "$ANYPOINT_ORG:$ASSET_ID:$VERSION" \
-            --organization "$ANYPOINT_ORG" \
-            --environment "$ANYPOINT_ENV" \
+            "$ASSET_ID" \
+            --groupId "$ANYPOINT_ORG" \
+            --assetVersion "$VERSION" \
             --replicas "$REPLICAS"
