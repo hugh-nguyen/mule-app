@@ -49,8 +49,14 @@ jobs:
           path: target/*.jar
           if-no-files-found: error
 
+      - name: Upload POM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pom-file
+          path: pom.xml
+
 # ╔══════════════════════════════════════════════════════════════════════════╗
-# ║ 2)  Deploy the JAR to CloudHub 2.0                                      ║
+# ║ 2)  Upload to Exchange and Deploy to CloudHub 2.0                       ║
 # ╚══════════════════════════════════════════════════════════════════════════╝
   deploy:
     needs: build
@@ -77,25 +83,73 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: mule-app
+          path: ./artifacts
+
+      - name: Download POM file
+        uses: actions/download-artifact@v4
+        with:
+          name: pom-file
+          path: ./
 
       - name: Install Anypoint CLI
         run: npm install -g anypoint-cli-v4
       
-      - name: Upload to Exchange
+      - name: Upload to Exchange using curl
         run: |
-          FILE=$(ls *.jar | head -n 1)
-          FULL_PATH=$(realpath "$FILE")
-          echo "!!Uploading $FULL_PATH to Exchange..."
-          echo "!!$ANYPOINT_ORG/$ASSET_ID/$VERSION"
+          # Find the JAR file
+          JAR_FILE=$(find ./artifacts -name "*.jar" -type f | grep -v "original")
           
-          # Use a simplified version with minimal quoting issues
-          anypoint-cli-v4 exchange:asset:upload \
-            --type "app" \
-            --name "$APP_NAME" \
-            "$ANYPOINT_ORG/$ASSET_ID/$VERSION" \
-            "$FULL_PATH"
+          # Create a ZIP file containing the JAR
+          mkdir -p temp_upload
+          cp "$JAR_FILE" temp_upload/
+          cd temp_upload
+          zip app.zip *.jar
+          cd ..
+          
+          echo "Creating access token..."
+          # Get access token using client credentials
+          TOKEN_RESPONSE=$(curl -s -X POST https://anypoint.mulesoft.com/accounts/api/v2/oauth2/token \
+            -H "Content-Type: application/json" \
+            -d '{
+              "client_id": "'$ANYPOINT_CLIENT_ID'",
+              "client_secret": "'$ANYPOINT_CLIENT_SECRET'",
+              "grant_type": "client_credentials"
+            }')
+          
+          ACCESS_TOKEN=$(echo $TOKEN_RESPONSE | grep -o '"access_token":"[^"]*' | sed 's/"access_token":"//')
+          
+          if [ -z "$ACCESS_TOKEN" ]; then
+            echo "Failed to get access token"
+            echo "Response: $TOKEN_RESPONSE"
+            exit 1
+          fi
+          
+          echo "Uploading to Exchange..."
+          UPLOAD_RESPONSE=$(curl -s -w "%{http_code}" \
+            -H "Authorization: Bearer $ACCESS_TOKEN" \
+            -H "x-sync-publication: true" \
+            -F "files.pom=@pom.xml" \
+            -F "files.zip=@temp_upload/app.zip" \
+            "https://anypoint.mulesoft.com/exchange/api/v2/organizations/$ANYPOINT_ORG/assets/$ANYPOINT_ORG/$ASSET_ID/$VERSION")
+          
+          HTTP_CODE=$(echo "$UPLOAD_RESPONSE" | tail -n1)
+          RESPONSE_BODY=$(echo "$UPLOAD_RESPONSE" | sed '$ d')
+          
+          echo "HTTP Status: $HTTP_CODE"
+          echo "Response: $RESPONSE_BODY"
+          
+          if [[ "$HTTP_CODE" != "201" ]]; then
+            echo "Failed to upload to Exchange"
+            exit 1
+          fi
+          
+          echo "Successfully uploaded to Exchange"
 
-      - name: Deploy to CloudHub 2.0
+      - name: Verify upload by listing Exchange assets
+        run: |
+          anypoint-cli-v4 exchange:asset:list --organization "$ANYPOINT_ORG"
+
+      - name: Deploy from Exchange to CloudHub 2.0
         run: |
           echo "Deploying $APP_NAME from Exchange to CloudHub 2.0 …"
 
@@ -106,6 +160,6 @@ jobs:
             "$ASSET_ID" \
             --organization "$ANYPOINT_ORG" \
             --environment "$ANYPOINT_ENV" \
-            --groupId "$GROUP_ID" \
+            --groupId "$ANYPOINT_ORG" \
             --assetVersion "$VERSION" \
             --replicas "$REPLICAS"
