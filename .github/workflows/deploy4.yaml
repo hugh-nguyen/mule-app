@@ -102,10 +102,10 @@ jobs:
           # Update the POM file to set the name and type properties
           sed -i "s|<type>app</type>|<type>rest-api</type>|g" pom.xml
           
-          # Add name property to POM if not present
-          if ! grep -q "<name>" pom.xml; then
-            sed -i "/<\/properties>/i\\    <name>Mule Service</name>" pom.xml
-          fi
+          # # Add name property to POM if not present
+          # if ! grep -q "<name>" pom.xml; then
+          #   sed -i "/<\/properties>/i\\    <name>Mule Service</name>" pom.xml
+          # fi
           
           # Create a ZIP file containing the JAR
           mkdir -p temp_upload
