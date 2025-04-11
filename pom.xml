@@ -8,6 +8,7 @@
   <artifactId>mule-service</artifactId>
   <version>0.0.1</version>
   <packaging>mule-application</packaging>
+  <name>mule-service</name>
 
   <properties>
     <app.runtime>4.4.0</app.runtime>
@@ -15,7 +16,6 @@
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
     <type>app</type>
-    <name>Mule Service</name>
   </properties>
 
   <build>
