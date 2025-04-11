@@ -157,8 +157,4 @@ jobs:
             "$DEPLOYMENT_TARGET_ID" \
             "$RUNTIME_VERSION" \
             "$ASSET_ID" \
-            --organization "$ANYPOINT_ORG" \
-            --environment "$ANYPOINT_ENV" \
-            --groupId "$ANYPOINT_ORG" \
-            --assetVersion "$VERSION" \
             --replicas "$REPLICAS"
