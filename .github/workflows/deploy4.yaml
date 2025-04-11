@@ -157,5 +157,6 @@ jobs:
             "cloudhub-us-east-2" \
             "4.6.0" \
             "$ASSET_ID" \
+            --groupId "$ANYPOINT_ORG" \
             --assetVersion "$VERSION" \
             --replicas "$REPLICAS"
