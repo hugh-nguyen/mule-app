@@ -59,6 +59,8 @@ jobs:
     env:
       ANYPOINT_CLIENT_ID:     ${{ secrets.ANYPOINT_CLIENT_ID }}
       ANYPOINT_CLIENT_SECRET: ${{ secrets.ANYPOINT_CLIENT_SECRET }}
+      ANYPOINT_ORG: ed678fab-d850-43e4-86b8-1c7ccfbc907a
+      ANYPOINT_ENV: Sandbox 
 
     steps:
       - name: Download build artifact
@@ -82,6 +84,4 @@ jobs:
             --worker-type  "$WORKER_SIZE" \
             --replicas     "$REPLICAS" \
             --redeploy \
-            --yes           \
-            --organization  "$ANYPOINT_ORG" \
-            --environment   "$ANYPOINT_ENV"
+            --yes
