@@ -2,7 +2,7 @@ name: DEPLOY1
 
 on:
   push:
-    branches: [ main ]
+    branches: [ none ]
   workflow_dispatch:  # Allow manual triggering
 
 jobs:
