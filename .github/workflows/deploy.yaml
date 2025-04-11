@@ -8,6 +8,14 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    env:
+        ANYPOINT_CLIENT_ID:     ${{ secrets.ANYPOINT_CLIENT_ID }}
+        ANYPOINT_CLIENT_SECRET: ${{ secrets.ANYPOINT_CLIENT_SECRET }}
+        ANYPOINT_ORG: ed678fab-d850-43e4-86b8-1c7ccfbc907a
+        ANYPOINT_ENV: Sandbox 
+
+        DEPLOYMENT_TARGET_ID: 14ea2e0c-40a3-44c0-8d25-2a8e6020a19d
+        REGION: ap-southeast-2
     
     steps:
     - name: Checkout code
@@ -28,13 +36,6 @@ jobs:
         npm install -g anypoint-cli-v4
         
     - name: Deploy to Cloudhub 2.0
-      env:
-        ANYPOINT_CLIENT_ID:     ${{ secrets.ANYPOINT_CLIENT_ID }}
-        ANYPOINT_CLIENT_SECRET: ${{ secrets.ANYPOINT_CLIENT_SECRET }}
-        ANYPOINT_ORG: ed678fab-d850-43e4-86b8-1c7ccfbc907a
-        ANYPOINT_ENV: Sandbox 
-
-        DEPLOYMENT_TARGET_ID: 14ea2e0c-40a3-44c0-8d25-2a8e6020a19d
 
       run: |
         JAR_FILE=$(find target -name "*.jar" -type f)
