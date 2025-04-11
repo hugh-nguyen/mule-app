@@ -11,8 +11,7 @@
 
   <properties>
     <app.runtime>4.4.0</app.runtime>
-    <!-- latest public release that works with Maven 3.9+ -->
-    <mule.maven.plugin.version>3.9.0</mule.maven.plugin.version>
+    <mule.maven.plugin.version>3.8.0</mule.maven.plugin.version>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
   </properties>
@@ -24,12 +23,26 @@
         <artifactId>mule-maven-plugin</artifactId>
         <version>${mule.maven.plugin.version}</version>
         <extensions>true</extensions>
+
+        <!-- add missing Resolver bits so 3.8.0 works with Maven 3.9+ -->
+        <dependencies>
+          <dependency>
+            <groupId>org.eclipse.aether</groupId>
+            <artifactId>aether-connector-basic</artifactId>
+            <version>1.1.0</version>
+          </dependency>
+          <dependency>
+            <groupId>org.eclipse.aether</groupId>
+            <artifactId>aether-transport-http</artifactId>
+            <version>1.1.0</version>
+          </dependency>
+        </dependencies>
       </plugin>
     </plugins>
   </build>
 
   <dependencies>
-    <!-- HTTP connector (required by your flow) -->
+    <!-- HTTP connector required by your flow -->
     <dependency>
       <groupId>org.mule.connectors</groupId>
       <artifactId>mule-http-connector</artifactId>
@@ -54,7 +67,6 @@
   </repositories>
 
   <pluginRepositories>
-    <!-- only one entry per ID to avoid “must be unique” errors -->
     <pluginRepository>
       <id>mulesoft-releases</id>
       <url>https://repository.mulesoft.org/releases/</url>
