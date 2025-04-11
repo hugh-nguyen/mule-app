@@ -85,7 +85,8 @@ jobs:
         run: |
           FILE=$(ls *.jar | head -n 1)
           FULL_PATH=$(realpath "$FILE")
-          echo "Uploading $FULL_PATH to Exchange..."
+          echo "!!Uploading $FULL_PATH to Exchange..."
+          echo "!!$ANYPOINT_ORG/$ASSET_ID/$VERSION"
           
           # Use a simplified version with minimal quoting issues
           anypoint-cli-v4 exchange:asset:upload \
