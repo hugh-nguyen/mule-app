@@ -5,17 +5,25 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+# ──────────────────────────────────────────────────────────────────────────────
+# CONSTANTS you’re unlikely to change often
+# ──────────────────────────────────────────────────────────────────────────────
 env:
   APP_NAME: mule-service
   RUNTIME_VERSION: 4.4.0
   REGION: ap-southeast-2
   WORKER_SIZE: CH2_MEDIUM
   REPLICAS: 1
-  BUSINESS_GROUP: mule-test          # org / business‑group
-  ENVIRONMENT: sandbox               # Anypoint environment
+
+  # ——— IDs from the screenshot ———————————————————————————
+  ANYPOINT_ORG: ed678fab-d850-43e4-86b8-1c7cfcbc907a     #  Business‑group ID
+  ANYPOINT_ENV: a30fae48-ce0e-4371-9fc6-ff8c0d2d7252     #  Environment  ID
+  # ————————————————————————————————————————————————————
 
 jobs:
-# ---------------------------------------------------------------------------
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║ 1)  Build the Mule application                                          ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
   build:
     runs-on: ubuntu-latest
     steps:
@@ -37,16 +45,21 @@ jobs:
           name: mule-app
           path: target/*.jar
           if-no-files-found: error
-# ---------------------------------------------------------------------------
+
+# ╔══════════════════════════════════════════════════════════════════════════╗
+# ║ 2)  Deploy the JAR to CloudHub 2.0                                      ║
+# ╚══════════════════════════════════════════════════════════════════════════╝
   deploy:
     needs: build
     runs-on: ubuntu-latest
-    environment: production           # (optional) manual‑approval gate
-    env:                              # ← credentials visible to every step
+    environment: production          # optional GitHub env for approvals
+
+    # ▸  Credentials are injected as environment variables so every CLI call
+    #    sees them automatically (no interactive prompts).
+    env:
       ANYPOINT_CLIENT_ID:     ${{ secrets.ANYPOINT_CLIENT_ID }}
       ANYPOINT_CLIENT_SECRET: ${{ secrets.ANYPOINT_CLIENT_SECRET }}
-      ANYPOINT_ORG:           mule-test
-      ANYPOINT_ENV:           sandbox
+
     steps:
       - name: Download build artifact
         uses: actions/download-artifact@v4
@@ -56,52 +69,19 @@ jobs:
       - name: Install Anypoint CLI
         run: npm install -g anypoint-cli
 
-      # # -----------------------------------------------------------
-      # # Deploy the JAR — credentials & context come from env‑vars,
-      # # so the CLI never prompts for input.
-      # # -----------------------------------------------------------
-      # - name: Resolve org & environment IDs
-      #   id: ids
-      #   run: |
-      #     # 1) Business‑group ID
-      #     echo "Check 1"
-      #     anypoint-cli --no-color account business-groups list --output json
-
-      #     ORG_ID=$(
-      #       anypoint-cli --no-color account business-groups list --output json |
-      #       jq -r '.[] | select(.name=="mule-test") | .id'
-      #     )
-
-      #     # 2) Environment ID *inside* that BG
-      #     echo "Check 2"
-      #     anypoint-cli --no-color account environments list --organization "$ORG_ID" --output json
-
-      #     ENV_ID=$(
-      #       anypoint-cli --no-color account environments list \
-      #                   --organization "$ORG_ID" --output json |
-      #       jq -r '.[] | select(.name=="Sandbox") | .id'
-      #     )
-
-      #     echo "Resolved ORG_ID=$ORG_ID"
-      #     echo "Resolved ENV_ID=$ENV_ID"
-
-      #     # expose them to later steps
-      #     echo "ORG_ID=$ORG_ID" >> $GITHUB_ENV
-      #     echo "ENV_ID=$ENV_ID" >> $GITHUB_ENV
-
       - name: Deploy to CloudHub 2.0
         run: |
           FILE=$(ls *.jar | head -n 1)
           echo "Deploying $FILE to CloudHub 2.0 …"
 
-          anypoint-cli runtime-mgr cloudhub2 applications deploy \
-            --name "$APP_NAME" \
-            --file "$FILE" \
-            --runtime "$RUNTIME_VERSION" \
-            --region "$REGION" \
-            --worker-type "$WORKER_SIZE" \
-            --replicas "$REPLICAS" \
-            --organization "ed678fab-d850-43e4-86b8-1c7ccfbc907a" \
-            --environment  "a30fae48-ce0e-4371-9fc6-ff8c0d2d7252" \
+          anypoint-cli --no-color runtime-mgr cloudhub2 applications deploy \
+            --name         "$APP_NAME" \
+            --file         "$FILE" \
+            --runtime      "$RUNTIME_VERSION" \
+            --region       "$REGION" \
+            --worker-type  "$WORKER_SIZE" \
+            --replicas     "$REPLICAS" \
             --redeploy \
-            --yes                       # auto‑confirm overwrite
+            --yes           \
+            --organization  "$ANYPOINT_ORG" \
+            --environment   "$ANYPOINT_ENV"
