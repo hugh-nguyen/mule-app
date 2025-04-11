@@ -73,6 +73,14 @@ jobs:
       REGION: ap-southeast-2
 
     steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: mule-app
+
+      - name: Install Anypoint CLI
+        run: npm install -g anypoint-cli-v4
+
       - name: Upload to Exchange
         run: |
           FILE=$(ls *.jar | head -n 1)
